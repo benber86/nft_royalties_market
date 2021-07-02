@@ -100,7 +100,7 @@ contract Marketplace {
         uint256 netSaleValue = grossSaleValue - royaltiesAmount;
         // Transfer royalties to rightholder if not zero
         if (royaltiesAmount > 0) {
-            payable(royaltiesReceiver).transfer(royaltiesAmount);
+            royaltiesReceiver.call{value: royaltiesAmount}('');
         }
         // Broadcast royalties payment
         emit RoyaltiesPaid(tokenId, royaltiesAmount);
@@ -135,7 +135,7 @@ contract Marketplace {
             saleValue = _deduceRoyalties(tokenId, saleValue);
         }
         // Transfer funds to the seller
-        payable(activeSellOffers[tokenId].seller).transfer(saleValue);
+        activeSellOffers[tokenId].seller.call{value: saleValue}('');
         // And token to the buyer
         token.safeTransferFrom(
             seller,
@@ -179,7 +179,7 @@ contract Marketplace {
         // Refund the owner of the previous buy offer
         buyOffersEscrow[previousBuyOfferOwner][tokenId] = 0;
         if (refundBuyOfferAmount > 0) {
-            payable(previousBuyOfferOwner).transfer(refundBuyOfferAmount);
+            payable(previousBuyOfferOwner).call{value: refundBuyOfferAmount}('');
         }
         // Create a new buy offer
         activeBuyOffers[tokenId] = BuyOffer({buyer : msg.sender,
@@ -205,7 +205,7 @@ contract Marketplace {
         delete(activeBuyOffers[tokenId]);
         // Refund the current buy offer if it is non-zero
         if (refundBuyOfferAmount > 0) {
-            payable(msg.sender).transfer(refundBuyOfferAmount);
+            msg.sender.call{value: refundBuyOfferAmount}('');
         }
         // Broadcast offer withdrawal
         emit BuyOfferWithdrawn(tokenId, msg.sender);
@@ -232,7 +232,7 @@ contract Marketplace {
         // Withdraw buyer's balance
         buyOffersEscrow[currentBuyer][tokenId] = 0;
         // Transfer funds to the seller
-        payable(msg.sender).transfer(netSaleValue);
+        msg.sender.call{value: netSaleValue}('');
         // And token to the buyer
         token.safeTransferFrom(
             msg.sender,

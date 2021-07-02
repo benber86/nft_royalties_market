@@ -59,7 +59,7 @@ contract RoyaltiesPayment is Ownable {
         require(amount <= balances[msg.sender].balance,
             "Insufficient balance");
         balances[msg.sender].balance -= amount;
-        payable(msg.sender).transfer(amount);
+        msg.sender.call{value: amount}('');
     }
 
     /// @notice Lets a user withdraw all the funds available to them
@@ -67,7 +67,7 @@ contract RoyaltiesPayment is Ownable {
         require(balances[msg.sender].balance > 0);
         uint256 balance = balances[msg.sender].balance;
         balances[msg.sender].balance = 0;
-        payable(msg.sender).transfer(balance);
+        msg.sender.call{value: balance}('');
     }
 
     /// @notice Clear all balances by paying out all payees their share
@@ -77,7 +77,7 @@ contract RoyaltiesPayment is Ownable {
             uint256 availableBalance = balances[payee].balance;
             if (availableBalance > 0) {
                 balances[payee].balance = 0;
-                payable(payee).transfer(availableBalance);
+                payee.call{value: availableBalance}('');
             }
         }
     }
