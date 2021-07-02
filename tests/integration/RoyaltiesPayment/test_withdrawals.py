@@ -5,8 +5,8 @@ import math
 
 class StateMachine:
 
-    value = strategy("uint256", max_value="100 ether")
-    withdrawal = strategy("uint256", max_value="20 ether")
+    value = strategy("uint256", min_value=1, max_value="100 ether")
+    withdrawal = strategy("uint256", min_value=1, max_value="20 ether")
     address = strategy("address", length=5)
 
     def __init__(cls, accounts, RoyaltiesPayment):
@@ -23,6 +23,7 @@ class StateMachine:
         if self.contract.balances(address)["userIndex"] == 0:
             self.contract.addPayee(address, {"from": self.accounts[0]})
             self.user_balances = {account: 0 for account in self.accounts[1:]}
+            self.user_balances[address] = 0
             self.payouts += 1
 
     def rule_deposit(self, value):
@@ -35,8 +36,8 @@ class StateMachine:
         }
 
     def rule_withdraw(self, address, withdrawal):
-        if (address in self.user_balances) and self.user_balances[address] > withdrawal:
-            self.contract.withdraw(value, {"from": address})
+        if (address in self.user_balances) and self.user_balances[address] >= withdrawal:
+            self.contract.withdraw(withdrawal, {"from": address})
             self.user_balances[address] -= withdrawal
             self.balance -= withdrawal
         else:
@@ -54,13 +55,6 @@ class StateMachine:
 
     def invariant(self):
         math.isclose(self.contract.balance(), self.balance, rel_tol=self.payouts)
-        print(self.user_balances)
-        print(
-            [
-                self.contract.balances(user)["balance"]
-                for user in self.user_balances.keys()
-            ]
-        )
         for user, amount in self.user_balances.items():
             assert math.isclose(
                 self.contract.balances(user)["balance"], amount, rel_tol=self.payouts
@@ -70,5 +64,5 @@ class StateMachine:
 
 def test_withdrawals(state_machine, RoyaltiesPayment, accounts):
     state_machine(
-        StateMachine, accounts, RoyaltiesPayment, settings={"max_examples": 15}
+        StateMachine, accounts, RoyaltiesPayment, settings={"max_examples": 30}
     )
