@@ -65,9 +65,10 @@ def test_purchase_low_offer(alice, bob, market, token_id):
 def test_purchase_unapproved_token(alice, bob, market, token, token_id):
     market.makeSellOffer(token_id, PRICE, {"from": alice})
     token.approve(ZERO_ADDRESS, token_id, {"from": alice})
-    with brownie.reverts("Invalid sell offer"):
-        tx = market.purchase(token_id, {"from": bob, "value": PRICE})
-        assert len(tx.events) == 1
-        assert tx.events["SellOfferWithdrawn"]["tokenId"] == token_id
-        assert tx.events["SellOfferWithdrawn"]["seller"] == alice
-        assert market.activeSellOffers(token_id) == (ZERO_ADDRESS, 0)
+    bob_balance = bob.balance()
+    tx = market.purchase(token_id, {"from": bob, "value": PRICE})
+    assert len(tx.events) == 1
+    assert tx.events["SellOfferWithdrawn"]["tokenId"] == token_id
+    assert tx.events["SellOfferWithdrawn"]["seller"] == alice
+    assert market.activeSellOffers(token_id) == (ZERO_ADDRESS, 0)
+    assert bob_balance == bob.balance()
