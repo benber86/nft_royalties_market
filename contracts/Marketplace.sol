@@ -124,7 +124,8 @@ contract Marketplace {
             // Broadcast offer withdrawal
             emit SellOfferWithdrawn(tokenId, seller);
             // Revert
-            revert("Invalid sell offer");
+            msg.sender.call{value: msg.value}('');
+            return;
         }
 
         require(msg.value >= activeSellOffers[tokenId].minPrice,
