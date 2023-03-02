@@ -143,8 +143,19 @@ contract Marketplace {
             msg.sender,
             tokenId
         );
-        // Remove all sell and buy offers
+        // Remove sell offers
         delete (activeSellOffers[tokenId]);
+        // Reimburse and remove buy offers
+        address existingBuyOfferOwner = activeBuyOffers[tokenId].buyer;
+        uint256 refundBuyOfferAmount = buyOffersEscrow[existingBuyOfferOwner][tokenId];
+        buyOffersEscrow[existingBuyOfferOwner][tokenId] = 0;
+        delete (activeBuyOffers[tokenId]);
+
+        // Refund the current buy offer if it is non-zero
+        if (refundBuyOfferAmount > 0) {
+            (bool success,) = existingBuyOfferOwner.call{value: refundBuyOfferAmount}("");
+            require(success, "Couldn't return buyoffer funds");
+        }
         delete (activeBuyOffers[tokenId]);
         // Broadcast the sale
         emit Sale(tokenId,
